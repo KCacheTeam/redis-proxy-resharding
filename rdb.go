@@ -1,4 +1,4 @@
-package redis_proxy_resharding
+package main
 
 // Parser RDB file per spec: https://github.com/sripathikrishnan/redis-rdb-tools/wiki/Redis-RDB-Dump-File-Format
 
@@ -57,8 +57,6 @@ var (
 	rdbSignature     = []byte{0x52, 0x45, 0x44, 0x49, 0x53}
 	restoreCommand   = "RESTORE"
 	currentTimestamp = uint64(0)
-	SkipRDB          = false
-	Replace          = true
 )
 
 var (
@@ -79,11 +77,11 @@ type RedisCommand struct {
 
 // Parser holds internal state of RDB parser while running
 type Parser struct {
-	reader         *bufio.Reader
-	output         chan *RedisCommand
-	originalLength int64
-	length         int64
-	hash           uint64
+	reader *bufio.Reader
+	output chan *RedisCommand
+
+	length int64
+	hash   uint64
 
 	rawData []byte
 	key     string
@@ -101,15 +99,14 @@ type state func(parser *Parser) (nextstate state, err error)
 
 // ParseRDB parsers RDB file which is read from reader, sending chunks of data through output channel
 // length is original length of RDB file
-func ParseRDB(reader *bufio.Reader, output chan *RedisCommand, length int64, counter *uint64) (err error) {
+func ParseRDB(reader *bufio.Reader, output chan *RedisCommand, counter *uint64) (err error) {
 	currentTimestamp = uint64(time.Now().Unix())
 	go cron()
 
 	parser := &Parser{
-		reader:         reader,
-		output:         output,
-		originalLength: length,
-		counter:        counter,
+		reader:  reader,
+		output:  output,
+		counter: counter,
 	}
 
 	state := stateMagic
@@ -392,7 +389,7 @@ func stateMagic(parser *Parser) (state, error) {
 		return nil, ErrWrongSignature
 	}
 
-	if version > 9 {
+	if version > 8 {
 		return nil, ErrVersionUnsupported
 	}
 

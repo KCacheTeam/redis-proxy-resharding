@@ -1,4 +1,4 @@
-package redis_proxy_resharding
+package main
 
 import "fmt"
 

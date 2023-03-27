@@ -1,4 +1,4 @@
-package redis_proxy_resharding
+package main
 
 var table = [256]uint64{
 	0x0000000000000000, 0x7ad870c830358979,
