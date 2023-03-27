@@ -389,7 +389,7 @@ func stateMagic(parser *Parser) (state, error) {
 		return nil, ErrWrongSignature
 	}
 
-	if version > 8 {
+	if version > 9 {
 		return nil, ErrVersionUnsupported
 	}
 

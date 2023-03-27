@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"flag"
+	"fmt"
 	"github.com/garyburd/redigo/redis"
 	"io"
 	"os"
@@ -60,7 +61,7 @@ func main() {
 
 	}()
 
-	conn, err := getConn("127.0.0.1:6379", "123")
+	conn, err := getConn(fmt.Sprintf("%s:%d", proxyHost, proxyPort), proxyPassword)
 	if err != nil {
 		panic(err)
 	}
