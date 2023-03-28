@@ -768,6 +768,8 @@ func stateCopyModule2(parser *Parser) (state, error) {
 	} else if length == 3465209449562641412 {
 		// cuckooFilter
 		return stateCopyCuckooFilter(parser)
+	} else if length == 5659418315958718464 {
+		return stateCopyTopk(parser)
 	} else {
 		fmt.Println(length)
 		return nil, errors.New("目前只支持布隆过滤器模块")
@@ -799,10 +801,8 @@ func stateCopyBloomFilter(parser *Parser) (state, error) {
 
 	numFilters := int(nfilters)
 	i := 0
-	for {
-		if i >= numFilters {
-			break
-		}
+	for i < numFilters {
+
 		i += 1
 
 		// entries
@@ -899,10 +899,8 @@ func stateCopyCuckooFilter(parser *Parser) (state, error) {
 	}
 
 	i := uint64(0)
-	for {
-		if i >= numFilters {
-			break
-		}
+	for i < numFilters {
+
 		i++
 		// filters[i].numBuckets
 		_, err = parser.readUnsigned(true)
@@ -911,6 +909,60 @@ func stateCopyCuckooFilter(parser *Parser) (state, error) {
 		}
 
 		// string buffer
+		_, err = parser.readStringBuffer(true)
+		if err != nil {
+			return nil, err
+		}
+
+	}
+
+	eof, _, err := parser.readLength(true)
+	if err != nil {
+		return nil, err
+	} else if eof != RdbModuleOpcodeEOF {
+		return nil, errors.New(fmt.Sprintf("illegal RdbModuleOpcodeString %d,expect:%d", eof, RdbModuleOpcodeEOF))
+	}
+	parser.keep()
+	return stateOp, nil
+}
+
+func stateCopyTopk(parser *Parser) (state, error) {
+	// k
+	k, err := parser.readUnsigned(true)
+	if err != nil {
+		return nil, err
+	}
+	//  width
+	_, err = parser.readUnsigned(true)
+	if err != nil {
+		return nil, err
+	}
+	//  depth
+	_, err = parser.readUnsigned(true)
+	if err != nil {
+		return nil, err
+	}
+	// decay
+	_, err = parser.readDouble(true)
+	if err != nil {
+		return nil, err
+	}
+	// Bucket
+	_, err = parser.readStringBuffer(true)
+	if err != nil {
+		return nil, err
+	}
+	// HeapBucket
+	_, err = parser.readStringBuffer(true)
+	if err != nil {
+		return nil, err
+	}
+
+	i := uint64(0)
+
+	for i < k {
+		i += 1
+		// k
 		_, err = parser.readStringBuffer(true)
 		if err != nil {
 			return nil, err
