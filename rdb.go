@@ -721,6 +721,24 @@ func (parser *Parser) readUnsigned(save bool) (uint64, error) {
 	return value, nil
 }
 
+// 为了存2个数值，在一起是uint，为了防止超范围;共用体底层还是uint64
+func (parser *Parser) readSigned(save bool) (uint64, error) {
+	val, _, err := parser.readLength(save)
+	if err != nil {
+		return 0, err
+	} else if val != RdbModuleOpcodeUInt {
+		return 0, errors.New(fmt.Sprintf("illegal RdbModuleOpcodeSInt %d,expect:%d", val, RdbModuleOpcodeUInt))
+	}
+
+	value, _, err := parser.readLength(save)
+	if err != nil {
+		return 0, err
+	}
+
+	// pp.Printf("type %d value %s\n", opcode, int(value))
+	return value, nil
+}
+
 func (parser *Parser) readDouble(save bool) (uint32, error) {
 	val, _, err := parser.readLength(save)
 	if err != nil {
@@ -762,6 +780,8 @@ func stateCopyModule2(parser *Parser) (state, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// todo 改成 switch
 	if length == 3465209449566631940 {
 		// bloomFilter
 		return stateCopyBloomFilter(parser)
@@ -770,6 +790,8 @@ func stateCopyModule2(parser *Parser) (state, error) {
 		return stateCopyCuckooFilter(parser)
 	} else if length == 5659418315958718464 {
 		return stateCopyTopk(parser)
+	} else if length == 5490471757281169408 {
+		return stateCopyTDigest(parser)
 	} else {
 		fmt.Println(length)
 		return nil, errors.New("目前只支持布隆过滤器模块")
@@ -852,14 +874,7 @@ func stateCopyBloomFilter(parser *Parser) (state, error) {
 
 	}
 
-	eof, _, err := parser.readLength(true)
-	if err != nil {
-		return nil, err
-	} else if eof != RdbModuleOpcodeEOF {
-		return nil, errors.New(fmt.Sprintf("illegal RdbModuleOpcodeString %d,expect:%d", eof, RdbModuleOpcodeEOF))
-	}
-	parser.keep()
-	return stateOp, nil
+	return stateRdbModuleEOF(parser)
 }
 
 func stateCopyCuckooFilter(parser *Parser) (state, error) {
@@ -916,14 +931,7 @@ func stateCopyCuckooFilter(parser *Parser) (state, error) {
 
 	}
 
-	eof, _, err := parser.readLength(true)
-	if err != nil {
-		return nil, err
-	} else if eof != RdbModuleOpcodeEOF {
-		return nil, errors.New(fmt.Sprintf("illegal RdbModuleOpcodeString %d,expect:%d", eof, RdbModuleOpcodeEOF))
-	}
-	parser.keep()
-	return stateOp, nil
+	return stateRdbModuleEOF(parser)
 }
 
 func stateCopyTopk(parser *Parser) (state, error) {
@@ -970,6 +978,77 @@ func stateCopyTopk(parser *Parser) (state, error) {
 
 	}
 
+	return stateRdbModuleEOF(parser)
+}
+
+func stateCopyTDigest(parser *Parser) (state, error) {
+	// compression
+	_, err := parser.readDouble(true)
+	if err != nil {
+		return nil, err
+	}
+	// min
+	_, err = parser.readDouble(true)
+	if err != nil {
+		return nil, err
+	}
+	// max
+	_, err = parser.readDouble(true)
+	if err != nil {
+		return nil, err
+	}
+	// cap
+	_, err = parser.readSigned(true)
+	if err != nil {
+		return nil, err
+	}
+	//  merged_nodes
+	mergedNodes, err := parser.readSigned(true)
+	if err != nil {
+		return nil, err
+	} else if int64(mergedNodes) < 0 {
+		return nil, errors.New("mergedNodes 大于 int64 表示的整数范围")
+	}
+	// unmerged_nodes
+	_, err = parser.readSigned(true)
+	if err != nil {
+		return nil, err
+	}
+	// total_compressions
+	_, err = parser.readSigned(true)
+	if err != nil {
+		return nil, err
+	}
+	//  merged_weight
+	_, err = parser.readDouble(true)
+	if err != nil {
+		return nil, err
+	}
+	// unmerged_weight
+	_, err = parser.readDouble(true)
+	if err != nil {
+		return nil, err
+	}
+
+	// mean
+	for i := int64(0); i < int64(mergedNodes); i++ {
+		_, err = parser.readDouble(true)
+		if err != nil {
+			return nil, err
+		}
+	}
+	// count
+	for i := int64(0); i < int64(mergedNodes); i++ {
+		_, err = parser.readDouble(true)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return stateRdbModuleEOF(parser)
+}
+
+func stateRdbModuleEOF(parser *Parser) (state, error) {
 	eof, _, err := parser.readLength(true)
 	if err != nil {
 		return nil, err

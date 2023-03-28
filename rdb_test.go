@@ -211,3 +211,8 @@ func Test_topk(t *testing.T) {
 	path := "./cases/topk.rdb"
 	coreTest(t, path)
 }
+
+func Test_t_digest(t *testing.T) {
+	path := "./cases/t_digest.rdb"
+	coreTest(t, path)
+}
