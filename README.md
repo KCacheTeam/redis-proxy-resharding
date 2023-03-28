@@ -8,7 +8,7 @@ parse RDB at your host and send command to twemproxy/slave online,Support RDB ve
 
 Special support
 ---------------------
-now,we only support  Bloom filter in RedisBloom, we will support  Cuckoo filter in the feature.
+now, we only support module RedisBloom, we will support another redis module in the feature.
 
 The function has been tested generally, if you find any problems or bugs, please contact me.
 

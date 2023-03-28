@@ -201,3 +201,23 @@ func Test_tree(t *testing.T) {
 	path := "./cases/tree.rdb"
 	coreTest(t, path)
 }
+
+func Test_cuckoo_filter(t *testing.T) {
+	path := "./cases/cuckoo_filter.rdb"
+	coreTest(t, path)
+}
+
+func Test_topk(t *testing.T) {
+	path := "./cases/topk.rdb"
+	coreTest(t, path)
+}
+
+func Test_t_digest(t *testing.T) {
+	path := "./cases/t_digest.rdb"
+	coreTest(t, path)
+}
+
+func Test_cms(t *testing.T) {
+	path := "./cases/cms.rdb"
+	coreTest(t, path)
+}
