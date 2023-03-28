@@ -792,6 +792,8 @@ func stateCopyModule2(parser *Parser) (state, error) {
 		return stateCopyTopk(parser)
 	} else if length == 5490471757281169408 {
 		return stateCopyTDigest(parser)
+	} else if length == 631811237999480832 {
+		return stateCopyCMS(parser)
 	} else {
 		fmt.Println(length)
 		return nil, errors.New("目前只支持布隆过滤器模块")
@@ -1045,6 +1047,30 @@ func stateCopyTDigest(parser *Parser) (state, error) {
 		}
 	}
 
+	return stateRdbModuleEOF(parser)
+}
+
+func stateCopyCMS(parser *Parser) (state, error) {
+	// width
+	_, err := parser.readUnsigned(true)
+	if err != nil {
+		return nil, err
+	}
+	// depth
+	_, err = parser.readUnsigned(true)
+	if err != nil {
+		return nil, err
+	}
+	// counter
+	_, err = parser.readUnsigned(true)
+	if err != nil {
+		return nil, err
+	}
+	// data
+	_, err = parser.readStringBuffer(true)
+	if err != nil {
+		return nil, err
+	}
 	return stateRdbModuleEOF(parser)
 }
 
