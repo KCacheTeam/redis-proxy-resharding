@@ -201,3 +201,8 @@ func Test_tree(t *testing.T) {
 	path := "./cases/tree.rdb"
 	coreTest(t, path)
 }
+
+func Test_cuckoo_filter(t *testing.T) {
+	path := "./cases/cuckoo_filter.rdb"
+	coreTest(t, path)
+}

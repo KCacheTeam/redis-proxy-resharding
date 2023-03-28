@@ -763,8 +763,13 @@ func stateCopyModule2(parser *Parser) (state, error) {
 		return nil, err
 	}
 	if length == 3465209449566631940 {
+		// bloomFilter
 		return stateCopyBloomFilter(parser)
+	} else if length == 3465209449562641412 {
+		// cuckooFilter
+		return stateCopyCuckooFilter(parser)
 	} else {
+		fmt.Println(length)
 		return nil, errors.New("目前只支持布隆过滤器模块")
 	}
 
@@ -841,6 +846,72 @@ func stateCopyBloomFilter(parser *Parser) (state, error) {
 		}
 		// size
 		_, err = parser.readUnsigned(true)
+		if err != nil {
+			return nil, err
+		}
+
+	}
+
+	eof, _, err := parser.readLength(true)
+	if err != nil {
+		return nil, err
+	} else if eof != RdbModuleOpcodeEOF {
+		return nil, errors.New(fmt.Sprintf("illegal RdbModuleOpcodeString %d,expect:%d", eof, RdbModuleOpcodeEOF))
+	}
+	parser.keep()
+	return stateOp, nil
+}
+
+func stateCopyCuckooFilter(parser *Parser) (state, error) {
+	numFilters, err := parser.readUnsigned(true)
+	if err != nil {
+		return nil, err
+	}
+	// numBuckets
+	_, err = parser.readUnsigned(true)
+	if err != nil {
+		return nil, err
+	}
+	// numItems
+	_, err = parser.readUnsigned(true)
+	if err != nil {
+		return nil, err
+	}
+	// numDeletes
+	_, err = parser.readUnsigned(true)
+	if err != nil {
+		return nil, err
+	}
+	// bucketSize
+	_, err = parser.readUnsigned(true)
+	if err != nil {
+		return nil, err
+	}
+	// maxIterations
+	_, err = parser.readUnsigned(true)
+	if err != nil {
+		return nil, err
+	}
+	// expansion
+	_, err = parser.readUnsigned(true)
+	if err != nil {
+		return nil, err
+	}
+
+	i := uint64(0)
+	for {
+		if i >= numFilters {
+			break
+		}
+		i++
+		// filters[i].numBuckets
+		_, err = parser.readUnsigned(true)
+		if err != nil {
+			return nil, err
+		}
+
+		// string buffer
+		_, err = parser.readStringBuffer(true)
 		if err != nil {
 			return nil, err
 		}
